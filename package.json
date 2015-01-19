@@ -1,0 +1,20 @@
+{
+  "name": "first",
+  "version": "1.0.0",
+  "description": "My first project",
+  "main": "first.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/christkv/myfirstproject.git"
+  },
+  "dependencies": {
+    "body-parser": "^1.10.1",
+    "mongodb": "~2.0"
+  },
+  "author": "Christian Kvalheim",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/christkv/myfirstproject/issues"
+  },
+  "homepage": "https://github.com/christkv/myfirstproject"
+}

@@ -1,0 +1,225 @@
+<html>
+
+<head>
+<title>Restaurant Rater</title>
+</head>
+
+<body style="background-color:B8B894">
+                <!--
+                <form id="new">
+                        
+                <label>Name</label><input id="new_name" name="new_name" type="text" placeholder="Name"/>
+                <button>Insert</button>
+
+                </form>
+
+
+                -->
+
+	
+		<form id="search" style="width:300px; margin-right:auto; margin-left:auto;" >
+			
+		<input id="name" name="name" type="text" placeholder="Name" required style="align:center" />
+		<button>Search</button>
+
+		</form>
+		<br/>
+		<div id="restaurant-container"></div>
+
+		<script src="js/jquery-1.11.2.js"></script>
+                <script src="js/underscore-min.js"></script>
+                <script src="js/backbone.js"></script>
+
+        <script type="text/javascript">
+
+		
+        (function($){
+	       	var Restaurant = Backbone.Model.extend({
+	        	defaults: function(){
+        		return{
+        			name: '',
+        			ratings: 0,
+				count: 0,
+				average: 0
+        		}
+
+        	}
+
+        });
+
+	       	 var RestaurantsList = Backbone.Collection.extend({
+
+        	model: Restaurant
+
+        });
+
+        var restaurants = new RestaurantsList();
+
+
+        var RestaurantView = Backbone.View.extend({
+
+        	model: new Restaurant(),
+
+        	tagName: 'div',
+        	events: {
+
+        		'click .edit': 'rate',
+        		'click .delete': 'delete'
+        		
+        	},
+        	initialize: function(){
+        		this.template = _.template($('#restaurant-template').html());
+        	},
+
+        	rate: function(ev){
+        		ev.preventDefault();
+				
+                                var name = this.model.get('name');
+				
+                                var rating = $("#"+name).val();
+
+                                var count = this.model.get('count');
+
+				var self = this;
+				
+				var curr = this.model.get('ratings');
+				
+                                var total = parseInt(curr,10) + parseInt(rating,10);
+				
+				count +=1;
+
+				var avg = Number((total/count)).toFixed(2);
+				
+          $.post("http://localhost:3000/rate",{name:name,ratings: total,average:avg}, function(data){
+                var x = JSON.parse(data);
+				
+                                self.model.set('average', x.average);
+				self.model.set('ratings',x.ratings);
+				self.model.set('count',x.count);
+				
+			});	
+        	},
+        	delete: function(ev){
+        		ev.preventDefault();
+                        var name=this.model.get('name');
+        		restaurants.remove(this.model);
+                        $("#delete").click(function(){
+                                $.post("http://localhost:3000/delete",{name: name}, function(data){
+                                        alert("Deleted");
+                                })
+                        });
+
+        	},
+
+        	render: function() {
+        		this.$el.html(this.template(this.model.toJSON()));
+        		return this;
+        	}
+
+        });
+
+
+        var RestaurantsView = Backbone.View.extend({
+        	model: restaurants,
+        	el: $('#restaurant-container'),
+        	initialize: function(){
+        		this.model.on('add', this.render, this);
+        		this.model.on('remove', this.render, this);
+			this.model.on('change', this.render, this);
+
+        	},
+        	render: function(){
+        		var self = this;
+        		self.$el.html('');
+        		_.each(this.model.toArray(), function(restaurant, i){
+        			self.$el.append((new RestaurantView({model: restaurant})).render().$el);
+
+        		});
+        		return this;
+        	}
+        });
+
+        $(document).ready(function () {
+        	// body...
+		var restaurant,x;
+		$.get('http://localhost:3000/display', {}, function(data){
+        	
+                       for(var i=0;i<2;i++)
+		        {
+		                x = data[i];
+		                restaurant = new Restaurant({name: x.name , ratings: x.ratings,count:x.count,average:x.average});
+		                restaurants.add(restaurant);
+		                console.log(restaurants.toJSON());
+		        }
+		});
+
+                var appView = new RestaurantsView();    
+
+
+                $('#search').submit(function(ev) {
+
+                        ev.preventDefault();
+                        
+                        name=$("#name").val();
+          
+                        $.post("http://localhost:3000/search",{name: name}, function(data){
+                                
+                                if(data!="-1"){
+
+                                var x = JSON.parse(data);
+                
+                                restaurants.reset();
+
+                                restaurant = new Restaurant({name: x.name , ratings: x.ratings,count:x.count,average:x.average});
+
+                                restaurants.add(restaurant);
+                                var appView = new RestaurantsView();
+                                return false; 
+                        }
+                        else alert("No such record")
+
+                        });
+		      	
+                });
+
+               /* $('#new').submit(function(ev) {
+                       
+                                var name=$("#new_name").val();
+                                var restaurant = new Restaurant({name: name , ratings:0,count:0,average:0});
+                                $.post("http://localhost:3000/insert",{name: name}, function(data){
+                                
+                                });
+                                restaurants.add(restaurant);
+                                var appView = new RestaurantsView();
+                                return false; 
+                         });
+                */
+        	
+        });
+        })(jQuery); 
+
+       
+        </script>
+
+        <!--Templates-->
+        <script type="text/template" id="restaurant-template">
+                <div class="item" style="width: 10%;margin: 0 auto;border:1px solid black">
+                <img src="img/placeholder.jpg" style="height: 20%;margin: 0 auto" /></br>
+        	<span class="name"><%= name %></span></br>
+        	<span class="average">Rating <%= average %></span></br>
+                <span class="count">Rated by <%= count %> users</span></br>
+        	<select id='<%= name %>'>
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                </select>
+                <a href="#" class="edit">rate</a>
+        	<!--<a href="#" class="delete">delete</a>-->
+                </div>
+                </br>
+        </script>
+<footer style="position: absolute; bottom: 0px; text-align:center">Image taken from http://www.bhookkad.com</footer>
+</body>
+</html>
